@@ -43,7 +43,7 @@ GLFWwindow* init_window()
 int main()
 {
     GLFWwindow* window = init_window();	
-	Shader shader("Shader/vertex.shader", "Shader/fragment.shader");
+	Shader shader("Shader/vert.shader", "Shader/fragment.shader");
 
 	const float vertices[] = { // Array holdind the vertices of a rectangle 
 		-0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 0.0f,
