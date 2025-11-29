@@ -1,5 +1,12 @@
 #include "shader.h"
+Vector2::Vector2(){}
+Vector2::Vector2(double x, double y)
+{
+    this->x = x;
+    this->y = y;
+}
 
+Shader::Shader(){}
 Shader::Shader(const char* vertex_shader_path, const char* fragment_shader_path)
 {
 
@@ -29,7 +36,7 @@ Shader::Shader(const char* vertex_shader_path, const char* fragment_shader_path)
 	}
 	catch (std::ifstream::failure e)
 	{
-		std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
+		std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ" << e.what() << std::endl;
 	}
 	const char* vShaderCode = vertexCode.c_str();
 	const char* fShaderCode = fragmentCode.c_str();
@@ -97,4 +104,9 @@ void Shader::set_int(const char* name, int value) const
 void Shader::set_float(const char* name, float value) const
 {
 	glUniform1f(glGetUniformLocation(ID, name), value);
+}
+
+void Shader::set_vec2(const char* name, Vector2 value) const
+{
+   glUniform2f(glGetUniformLocation(ID, name), value.x, value.y); 
 }
