@@ -5,6 +5,22 @@ Vector2::Vector2(double x, double y)
     this->x = x;
     this->y = y;
 }
+void Vector2::operator+=(Vector2 v)
+{
+    this->x += v.x;
+    this->y += v.y;
+}
+
+Vector2 operator-(Vector2 u, Vector2 v){
+    return Vector2(u.x - v.x, u.y -v.y);
+}
+Vector2 operator*(double a, Vector2 v){
+    return Vector2(a*v.x, a*v.y);
+}
+
+double dist(Vector2 v, Vector2 w){
+    return sqrt(pow(v.x - w.x, 2) + pow(v.y - w.y, 2));
+}
 
 Shader::Shader(){}
 Shader::Shader(const char* vertex_shader_path, const char* fragment_shader_path)

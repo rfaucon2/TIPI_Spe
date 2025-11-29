@@ -44,7 +44,7 @@ GLFWwindow* init_window()
 int main()
 {
     GLFWwindow* window = init_window();	
-    Galaxy galaxy;	
+    Galaxy galaxy(Algorithm::Naive);	
 
 	while (!glfwWindowShouldClose(window)) // Main Loop
 	{

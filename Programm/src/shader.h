@@ -6,13 +6,19 @@
 #include <string>
 #include <sstream>
 #include <fstream>
+#include <cmath>
 
 class Vector2{
 public:
     double x, y;
     Vector2();
     Vector2(double x, double y);
+    
+    void operator+=(Vector2 v);
 };
+Vector2 operator*(double a, Vector2 v);
+Vector2 operator-(Vector2 u, Vector2 v);
+double dist(Vector2 v, Vector2 w);
 
 class Shader
 {
