@@ -33,7 +33,7 @@ public:
     Galaxy(Algorithm type);
     ~Galaxy();
 
-    void Update();
+    void Update(double dt);
     void Draw();
 
 private:

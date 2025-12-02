@@ -28,12 +28,12 @@ void Star::update_position(double dt){
 Galaxy::Galaxy(Algorithm type){
     this->algo_type = type;
     // Init list of stars
-    this->star_count = 100;
+    this->star_count = 25;
     this->stars = new Star[this->star_count];
-    for(int i = 0; i < 10; i++)
-        for (int j = 0; j < 10; j++)
+    for(int i = 0; i < 5; i++)
+        for (int j = 0; j < 5; j++)
         {
-            this->stars[i*10+j] = Star(i*0.1 -0.5, j*0.1 -0.5, 2*pow(10, 30));
+            this->stars[i*5+j] = Star(i*0.1 -0.5, j*0.1 -0.5, 2*pow(10, 30));
         }
     
     // Init shader
@@ -91,11 +91,11 @@ void Galaxy::Naive(int star_id){
     }
 }
 
-void Galaxy::Update(){
-    const float dt = 0.001;
+void Galaxy::Update(double dt){
     for(int i = 0; i < this->star_count; i++)
         this->calculate_force(i);
 }
+ 
 void Galaxy::Draw(){
     for(int i = 0; i < this->star_count; i++)
     {

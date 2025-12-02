@@ -44,13 +44,23 @@ GLFWwindow* init_window()
 int main()
 {
     GLFWwindow* window = init_window();	
-    Galaxy galaxy(Algorithm::Naive);	
+    Galaxy galaxy(Algorithm::Naive);
+
+    double curent_time = 0.f;
+    double prev_time = 0.f;
+    int fps = 0.f;
 
 	while (!glfwWindowShouldClose(window)) // Main Loop
 	{
-		process_input(window);
-        galaxy.Update();
+        process_input(window);
 
+        curent_time = glfwGetTime();
+
+        galaxy.Update(dt);
+        
+        double dt = curent_time - prev_time;
+        prev_time = curent_time;
+        glfwSetWindowTitle(window, (std::string("Simulation: ") + std::to_string(1/dt)).c_str());
 		glClearColor(0.f, 0.f, 0.f, 0.f);
 		glClear(GL_COLOR_BUFFER_BIT); // Apply the color previously set
 
