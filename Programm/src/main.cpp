@@ -55,8 +55,7 @@ int main()
         process_input(window);
 
         curent_time = glfwGetTime();
-
-        galaxy.Update(dt);
+        galaxy.Update();
         
         double dt = curent_time - prev_time;
         prev_time = curent_time;

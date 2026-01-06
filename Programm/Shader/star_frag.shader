@@ -11,5 +11,5 @@ void main()
     float radius = 0.01;
     if (length(pos) > radius)
         discard;   // Make outside transparent (or background)
-    FragColor = (1.0 - smoothstep(0, radius, length(pos))) * vec4(132.0/255.0, 13.0/255.0, 191.0/255.0, 1.0);
+    FragColor = (1.0 - smoothstep(0, radius, length(pos))) * vec4(132.0/255.0, 130.0/255.0, 191.0/255.0, 1.0);
 }

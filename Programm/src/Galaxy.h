@@ -3,6 +3,13 @@
 
 #include "shader.h"
 #define G 6.674*pow(10, -11) //m^3 kg^-1 switch 
+#define PI 3.14159
+
+class QuadTree{
+public:
+    QuadTree *childs[3];
+    int star_id;
+};
 
 class Star{
 public:
@@ -14,7 +21,7 @@ public:
     const double max_speed = 10;
 
     Star();
-    Star(double x, double y, double radius);
+    Star(double x, double y, double mass);
 
     void operator=(Star s);
 
@@ -33,12 +40,14 @@ public:
     Galaxy(Algorithm type);
     ~Galaxy();
 
-    void Update(double dt);
+    void insert_star_in_tree (double x, double y, int id);
+    void Update();
+    void Update_tree();
     void Draw();
 
 private:
     // Objects varables
-    double time_step = 0.01;
+    double time_step = 0.00001;
     int star_count;
     Star* stars;
 

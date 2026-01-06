@@ -1,10 +1,11 @@
 #include "Galaxy.h"
 
 Star::Star(){}
-Star::Star(double x, double y, double radius){
+Star::Star(double x, double y, double mass){
     this->position = Vector2(x, y);
     this->speed = Vector2(0, 0);
-    this->radius = radius;
+    this->mass = mass;
+    this->radius = mass;
 }
 void Star::operator=(Star s){
     this->speed = s.speed;
@@ -16,7 +17,7 @@ void Star::operator=(Star s){
 }
 Vector2 Star::force_field(Vector2 uTov){
     double d = dist(uTov, Vector2(0, 0));
-    return G*this->mass/pow(d, 3) * uTov;  
+    return -(G*this->mass/pow(d, 3)) * uTov;  
 }
 void Star::apply_force(Vector2 f, double dt){
    this->speed += dt * f; 
@@ -28,14 +29,20 @@ void Star::update_position(double dt){
 Galaxy::Galaxy(Algorithm type){
     this->algo_type = type;
     // Init list of stars
-    this->star_count = 25;
+    this->star_count = 1000;
     this->stars = new Star[this->star_count];
-    for(int i = 0; i < 5; i++)
-        for (int j = 0; j < 5; j++)
-        {
-            this->stars[i*5+j] = Star(i*0.1 -0.5, j*0.1 -0.5, 2*pow(10, 30));
-        }
-    
+
+    // Randomly generates stars
+    std::random_device rd{}; 
+    std::mt19937 gen{rd()};
+    std::normal_distribution<float> d{0, 0.7};
+    for(int i = 0; i < this-> star_count; i++)
+    {
+        double r = d(gen);
+        double t = static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/3));
+        this->stars[i] = Star(r*cos(t), r*sin(t), pow(10, 11));
+    }
+    std::cout << "generated\n"; 
     // Init shader
 	this->shader = Shader("Shader/star_vert.shader", "Shader/star_frag.shader");
     //Create the star object for rendering
@@ -86,16 +93,29 @@ void Galaxy::Naive(int star_id){
     for(int i = 0; i < this->star_count; i++){
         if(i == star_id)
             i++;
-        this->stars[star_id].apply_force(this->stars[i].force_field(this->stars[star_id].position - this->stars[i].position), this->time_step);
-        std::cout << this->stars[i].force_field(this->stars[star_id].position - this->stars[i].position).x << std::endl;
+        Vector2 F = this->stars[i].force_field(this->stars[star_id].position - this->stars[i].position);
+        this->stars[star_id].apply_force(F, this->time_step);
     }
 }
 
-void Galaxy::Update(double dt){
-    for(int i = 0; i < this->star_count; i++)
+void Galaxy::Update(){
+    if(this->algo_type == Algorithm::Barnes_Hut)
+        this->Update_tree();
+
+    for(int i = 0; i < this->star_count; i++){
         this->calculate_force(i);
+        this->stars[i].update_position(this->time_step);
+    }
 }
- 
+ void Galaxy::Update_tree(){
+    for(int i = 0; i < this->star_count; i++)
+        this->insert_star_in_tree(this->stars[i].x, this->stard[i].y, i);
+}
+
+void Galaxy::insert_star_in_tree(double x, double y, int id){
+
+}
+
 void Galaxy::Draw(){
     for(int i = 0; i < this->star_count; i++)
     {
