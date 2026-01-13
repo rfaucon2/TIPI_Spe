@@ -7,8 +7,16 @@
 
 class QuadTree{
 public:
-    QuadTree *childs[3];
+    QuadTree *childs[4]; 
+        //      ^
+        //   0  │  1
+        // ─────┼────>
+        //   2  │  3
+        //      │
     int star_id;
+    Vector2 star_pos;
+    Vector2 center;
+    int depth;
 };
 
 class Star{
@@ -37,10 +45,10 @@ enum Algorithm {
 
 class Galaxy{
 public:
-    Galaxy(Algorithm type);
+    Galaxy(int window_size, Algorithm type);
     ~Galaxy();
 
-    void insert_star_in_tree (double x, double y, int id);
+    void insert_star_in_tree (double x, double y, int id, QuadTree *tree);
     void Update();
     void Update_tree();
     void Draw();
@@ -53,8 +61,9 @@ private:
 
     void calculate_force(int star_id);
     void Naive(int star_id);
+    
     //Rendering variables
-
+    int window_size;
     const double star_radius = 10;
     unsigned int VAO;
     unsigned int VBO;

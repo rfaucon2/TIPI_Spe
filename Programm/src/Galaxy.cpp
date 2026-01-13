@@ -10,7 +10,6 @@ Star::Star(double x, double y, double mass){
 void Star::operator=(Star s){
     this->speed = s.speed;
     this->position = s.position;
-
     this->mass = s.mass;
     this->radius = s.radius;
 
@@ -26,8 +25,9 @@ void Star::update_position(double dt){
     this->position += dt * this->speed;
 }
 
-Galaxy::Galaxy(Algorithm type){
+Galaxy::Galaxy(int window_size, Algorithm type){
     this->algo_type = type;
+    this->window_size = window_size;
     // Init list of stars
     this->star_count = 1000;
     this->stars = new Star[this->star_count];
@@ -36,13 +36,14 @@ Galaxy::Galaxy(Algorithm type){
     std::random_device rd{}; 
     std::mt19937 gen{rd()};
     std::normal_distribution<float> d{0, 0.7};
-    for(int i = 0; i < this-> star_count; i++)
+    for(int i = 0; i < this->star_count; i++)
     {
         double r = d(gen);
         double t = static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/3));
         this->stars[i] = Star(r*cos(t), r*sin(t), pow(10, 11));
+        std::cout <<r*cos(t) << "\t" << r*sin(t) << std::endl;
     }
-    std::cout << "generated\n"; 
+    this->stars[0] = Star(0, 0, pow(10, 11));
     // Init shader
 	this->shader = Shader("Shader/star_vert.shader", "Shader/star_frag.shader");
     //Create the star object for rendering
@@ -109,11 +110,28 @@ void Galaxy::Update(){
 }
  void Galaxy::Update_tree(){
     for(int i = 0; i < this->star_count; i++)
-        this->insert_star_in_tree(this->stars[i].x, this->stard[i].y, i);
+        this->insert_star_in_tree(this->stars[i].position.x, this->stars[i].position.y, i);
 }
 
-void Galaxy::insert_star_in_tree(double x, double y, int id){
-
+void Galaxy::insert_star_in_tree(double x, double y, int id, QuadTree *tree){
+    if(*tree.star_id = -1) { // if not a leaf
+        int quadrant = (x >= *tree.center.x) + 2*(y < *tree.center.y);
+        if((*tree)[quadrant] != std::null_ptr)
+            insert_star_in_tree(x, y, id, (*tree)[quadrant]);
+        else
+            (*tree)[quadrant] = new Quadtree({std::null_ptr, std::null_ptr, std::null_ptr, std::null_ptr},
+                                              id,
+                                              (*tree).star_pos,
+                                              (*tree).center + Vector2(this->window_size / pow(2, -(*tree)depth + 1)),
+                                              (*tree).depth + 1;
+    }
+    else {
+        int last_id = (*tree).star_id;
+        Vector2 last_pos = (*tree).star_pos;
+        (*tree).star_id = -1;
+        insert_star_in_tree(x, y, id, tree);
+        insert_star_in_tree(last_pos.x, last_pos.y, last_id, tree);
+    }
 }
 
 void Galaxy::Draw(){

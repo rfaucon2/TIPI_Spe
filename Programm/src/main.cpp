@@ -14,14 +14,14 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
 	glViewport(0, 0, width, height);
 }
-GLFWwindow* init_window()
+GLFWwindow* init_window(int window_size)
 { 
     glfwInit(); 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3); // Set glfw version to 3.3
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	GLFWwindow *window = glfwCreateWindow(1920, 1080, "openGL_course", GL_NONE, GL_NONE);
+	GLFWwindow *window = glfwCreateWindow(window_size, window_size, "openGL_course", GL_NONE, GL_NONE);
 
 	if (window == NULL)
 	{
@@ -43,8 +43,9 @@ GLFWwindow* init_window()
 
 int main()
 {
-    GLFWwindow* window = init_window();	
-    Galaxy galaxy(Algorithm::Naive);
+    int window_size= 1000;
+    GLFWwindow* window = init_window(window_size);	
+    Galaxy galaxy(window_size, Algorithm::Naive);
 
     double curent_time = 0.f;
     double prev_time = 0.f;

@@ -4,7 +4,7 @@ out vec4 FragColor;
 
 void main()
 {
-    float uAspect = 1920.0/1080.0;
+    float uAspect = 1000.0/1000.0;
     vec2 pos = vPos;
     pos.x *= uAspect;
 
