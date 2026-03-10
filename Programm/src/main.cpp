@@ -45,7 +45,7 @@ int main()
 {
     int window_size= 1000;
     GLFWwindow* window = init_window(window_size);	
-    Galaxy galaxy(window_size, Algorithm::Naive);
+    Galaxy galaxy(window_size, Algorithm::Barnes_Hut);
 
     double curent_time = 0.f;
     double prev_time = 0.f;

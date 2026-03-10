@@ -1,9 +1,11 @@
 #ifndef GALAXY
 #define GALAXY
 
+#include <queue>
 #include "shader.h"
 #define G 6.674*pow(10, -11) //m^3 kg^-1 switch 
 #define PI 3.14159
+#define EPSILON 0.00000001
 
 class QuadTree{
 public:
@@ -14,8 +16,9 @@ public:
         //   2  │  3
         //      │
     int star_id;
-    Vector2 star_pos;
+    Vector2 star_pos; // Alse used as the center of mass
     Vector2 center;
+    double mass;
     int depth;
 };
 
@@ -55,12 +58,19 @@ public:
 
 private:
     // Objects varables
-    double time_step = 0.00001;
+    double time_step = 0.0000001;
     int star_count;
-    Star* stars;
+    Star *stars;
 
+    // Barnes-Hut 
+    double BH_theta = 0.5;
+    QuadTree *BH_tree;
+    std::queue<QuadTree*> BH_queue;
+
+    // Force functions
     void calculate_force(int star_id);
     void Naive(int star_id);
+    void Barnes_hut(int star_id);
     
     //Rendering variables
     int window_size;

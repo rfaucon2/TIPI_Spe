@@ -17,6 +17,8 @@ public:
     void operator+=(Vector2 v);
 };
 Vector2 operator*(double a, Vector2 v);
+Vector2 operator/(Vector2 v, double a);
+Vector2 operator+(Vector2 u, Vector2 v);
 Vector2 operator-(Vector2 u, Vector2 v);
 double dist(Vector2 v, Vector2 w);
 

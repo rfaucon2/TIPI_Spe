@@ -11,6 +11,12 @@ void Vector2::operator+=(Vector2 v)
     this->y += v.y;
 }
 
+Vector2 operator/(Vector2 v, double a){
+    return Vector2(v.x / a, v.y /a);
+}
+Vector2 operator+(Vector2 u, Vector2 v){
+    return Vector2(u.x + v.x, u.y +v.y);
+}
 Vector2 operator-(Vector2 u, Vector2 v){
     return Vector2(u.x - v.x, u.y -v.y);
 }
