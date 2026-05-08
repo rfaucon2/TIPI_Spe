@@ -16,11 +16,10 @@ void Star::operator=(Star s){
 }
 Vector2 Star::force_field(Vector2 uTov){
     double d = std::max(dist(uTov, Vector2(0, 0)), EPSILON);
-
     return -(G*this->mass/pow(d, 3)) * uTov;  
 }
 void Star::apply_force(Vector2 f, double dt){
-   this->speed += dt * f; 
+    this->speed += dt * f; 
 }
 void Star::update_position(double dt){
     this->position += dt * this->speed;
@@ -30,7 +29,7 @@ Galaxy::Galaxy(int window_size, Algorithm type){
     this->algo_type = type;
     this->window_size = window_size;
     // Init list of stars
-    this->star_count = 1000;
+    this->star_count =2;
     this->stars = new Star[this->star_count];
 
     // Randomly generates stars
@@ -56,7 +55,8 @@ Galaxy::Galaxy(int window_size, Algorithm type){
          0.5, 0.5,
          0.5,-0.5,
         -0.5, 0.5,
-        // Second triangle 
+        // Secon
+        // d triangle 
          0.5,-0.5,
         -0.5,-0.5l,
         -0.5, 0.5
@@ -77,10 +77,18 @@ Galaxy::Galaxy(int window_size, Algorithm type){
 	glBindBuffer(GL_ARRAY_BUFFER, 0); // Unbind the VBO
 	glBindVertexArray(0); // Unbind the VAO
 }
-
+void delete_tree(QuadTree *tree)
+{
+    for(int i = 0; i < 4; i++)
+    {
+        if(tree->childs[i] != nullptr)
+            delete_tree(tree->childs[i]);
+    }
+    delete tree;
+}
 Galaxy::~Galaxy(){
     delete this->stars;
-    delete this->BH_tree;
+    delete_tree(this->BH_tree);
 }
 
 void Galaxy::calculate_force(int star_id)
@@ -107,7 +115,6 @@ void Galaxy::Naive(int star_id){
 void Galaxy::Barnes_hut(int star_id)
 {
     this->BH_queue = std::queue<QuadTree*>();
-    std::cout << star_id << "\n";
     
     for(int i = 0; i < 4; i++)
         if (this->BH_tree->childs[i] != nullptr)
@@ -116,7 +123,6 @@ void Galaxy::Barnes_hut(int star_id)
     for(;!BH_queue.empty();BH_queue.pop())
     {
         QuadTree* current = BH_queue.front();
-    std::cout << star_id << "\n";
         if(current->star_id != -1) // if node is a leaf
         {
             Vector2 F = this->stars[current->star_id].force_field(this->stars[star_id].position - this->stars[current -> star_id].position);
@@ -145,18 +151,25 @@ void Galaxy::Barnes_hut(int star_id)
     }
 }
 
-void Galaxy::Update(){
+void Galaxy::Update()
+{
     if(this->algo_type == Algorithm::Barnes_Hut)
+    {
+        this->BH_tree = new QuadTree{{nullptr, nullptr, nullptr, nullptr}, -1, Vector2(0,0), Vector2(window_size/2, window_size/2), 0};
         this->Update_tree();
-
+    }
     for(int i = 0; i < this->star_count; i++){
         this->calculate_force(i);
         this->stars[i].update_position(this->time_step);
     }
+    if(this->algo_type == Algorithm::Barnes_Hut)
+        delete_tree(this->BH_tree);
 }
  void Galaxy::Update_tree(){
     for(int i = 0; i < this->star_count; i++)
+    {
         this->insert_star_in_tree(this->stars[i].position.x, this->stars[i].position.y, i, this->BH_tree);
+    }
 }
 
 void Galaxy::insert_star_in_tree(double x, double y, int id, QuadTree *tree){
@@ -184,8 +197,10 @@ void Galaxy::insert_star_in_tree(double x, double y, int id, QuadTree *tree){
         int last_id = (*tree).star_id;
         Vector2 last_pos = (*tree).star_pos;
 
-        (*tree).star_id = -1;
-        tree->star_pos = (tree->mass*tree->star_pos + this->stars[id].mass*this->stars[id].position)/(tree->mass * this->stars[id].mass);
+       (*tree).star_id = -1;
+        tree->star_pos = (tree->mass*tree->star_pos + this->stars[id].mass*this->stars[id].position)/(tree->mass + this->stars[id].mass);
+
+        
         tree->mass += this->stars[id].mass;
 
         insert_star_in_tree(x, y, id, tree);

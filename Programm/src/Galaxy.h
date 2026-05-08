@@ -5,7 +5,7 @@
 #include "shader.h"
 #define G 6.674*pow(10, -11) //m^3 kg^-1 switch 
 #define PI 3.14159
-#define EPSILON 0.00000001
+#define EPSILON 0.00001
 
 class QuadTree{
 public:
