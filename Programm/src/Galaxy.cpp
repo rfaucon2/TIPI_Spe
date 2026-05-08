@@ -20,7 +20,7 @@ Vector2 Star::force_field(Vector2 uTov){
     return -(G*this->mass/pow(d, 3)) * uTov;  
 }
 void Star::apply_force(Vector2 f, double dt){
-   this->speed += dt * f; 
+    this->speed += dt * f; 
 }
 void Star::update_position(double dt){
     this->position += dt * this->speed;
@@ -107,7 +107,6 @@ void Galaxy::Naive(int star_id){
 void Galaxy::Barnes_hut(int star_id)
 {
     this->BH_queue = std::queue<QuadTree*>();
-    std::cout << star_id << "\n";
     
     for(int i = 0; i < 4; i++)
         if (this->BH_tree->childs[i] != nullptr)
@@ -116,9 +115,9 @@ void Galaxy::Barnes_hut(int star_id)
     for(;!BH_queue.empty();BH_queue.pop())
     {
         QuadTree* current = BH_queue.front();
-    std::cout << star_id << "\n";
         if(current->star_id != -1) // if node is a leaf
         {
+            std::cout << this->stars[star_id].position.x << ", " << this->stars[current -> star_id].position.x << std::endl;
             Vector2 F = this->stars[current->star_id].force_field(this->stars[star_id].position - this->stars[current -> star_id].position);
             this->stars[star_id].apply_force(F, this->time_step);
     
@@ -131,6 +130,7 @@ void Galaxy::Barnes_hut(int star_id)
             
             if (s/d < this->BH_theta) // If sufficiently far away
             {
+                std::cout << this->stars[star_id].position.x << ", " << -current->star_pos.x << std::endl;
                 Vector2 F = Star(current->star_pos.x, current->star_pos.y, current->mass).force_field(this->stars[star_id].position - current->star_pos);
                 this->stars[star_id].apply_force(F, this->time_step);
             }
@@ -139,53 +139,66 @@ void Galaxy::Barnes_hut(int star_id)
                 for(int i = 0; i < 4; i++)
                     if (current->childs[i] != nullptr)
                         BH_queue.push(current->childs[i]);
-
             }
         }
     }
 }
 
 void Galaxy::Update(){
-    if(this->algo_type == Algorithm::Barnes_Hut)
+    if(this->algo_type == Algorithm::Barnes_Hut){ 
+        this->Delete_tree(this->BH_tree);
         this->Update_tree();
+    }
 
     for(int i = 0; i < this->star_count; i++){
         this->calculate_force(i);
         this->stars[i].update_position(this->time_step);
     }
+
 }
- void Galaxy::Update_tree(){
-    for(int i = 0; i < this->star_count; i++)
+
+void Galaxy::Update_tree(){
+    this->BH_tree = new QuadTree{{nullptr, nullptr, nullptr, nullptr}, -1, Vector2(0,0), Vector2(window_size/2, window_size/2), 0};
+    for(int i = 0; i < this->star_count; i++){
         this->insert_star_in_tree(this->stars[i].position.x, this->stars[i].position.y, i, this->BH_tree);
+    }
+}
+
+void Galaxy::Delete_tree(QuadTree* tree){
+    for(int i = 0; i < 4; i++)
+    {
+        if(tree->childs[i] != nullptr)
+            Delete_tree(tree->childs[i]);
+    }
+    delete tree;
 }
 
 void Galaxy::insert_star_in_tree(double x, double y, int id, QuadTree *tree){
     if(tree->star_id == -1) { // if not a leaf
         int quadrant = (x >= tree->center.x) + 2*(y < tree->center.y);
 
-        if((*tree).childs[quadrant] != nullptr) // if quadrant not empty, modify mass stuff and recurse into it
+        if(tree->childs[quadrant] != nullptr) // if quadrant not empty, modify mass stuff and recurse into it
         {
             tree->star_pos = (tree->mass*tree->star_pos + this->stars[id].mass*this->stars[id].position)/(tree->mass + this->stars[id].mass);
             tree->mass += this->stars[id].mass;
-            insert_star_in_tree(x, y, id, (*tree).childs[quadrant]);
+            insert_star_in_tree(x, y, id, tree->childs[quadrant]);
         }
-
         else // if quadrant empty, then displace the leaf
-            (*tree).childs[quadrant] = new QuadTree {
+            tree->childs[quadrant] = new QuadTree {
                                               {nullptr, nullptr, nullptr, nullptr},
                                               id,
-                                              (*tree).star_pos,
-                                              (*tree).center + Vector2(this->window_size / pow(2, -(*tree).depth + 1), this->window_size / pow(2, -(*tree).depth + 1)),
-                                              (*tree).mass,
-                                              (*tree).depth + 1
+                                              tree->star_pos,
+                                              tree->center + Vector2(this->window_size / pow(2, -tree->depth + 1), this->window_size / pow(2, -tree->depth + 1)),
+                                              tree->mass,
+                                              tree->depth + 1
             };
     }
     else {
-        int last_id = (*tree).star_id;
-        Vector2 last_pos = (*tree).star_pos;
+        int last_id = tree->star_id;
+        Vector2 last_pos = tree->star_pos;
 
-        (*tree).star_id = -1;
-        tree->star_pos = (tree->mass*tree->star_pos + this->stars[id].mass*this->stars[id].position)/(tree->mass * this->stars[id].mass);
+        tree->star_id = -1;
+        tree->star_pos = (tree->mass * tree->star_pos + this->stars[id].mass*this->stars[id].position)/(tree->mass * this->stars[id].mass);
         tree->mass += this->stars[id].mass;
 
         insert_star_in_tree(x, y, id, tree);
