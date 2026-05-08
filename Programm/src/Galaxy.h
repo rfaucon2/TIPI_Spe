@@ -54,6 +54,7 @@ public:
     void insert_star_in_tree (double x, double y, int id, QuadTree *tree);
     void Update();
     void Update_tree();
+    void Delete_tree(QuadTree* tree);
     void Draw();
 
 private:
