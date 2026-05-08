@@ -31,8 +31,7 @@ double dist(Vector2 v, Vector2 w){
 Shader::Shader(){}
 Shader::Shader(const char* vertex_shader_path, const char* fragment_shader_path)
 {
-
-	// 1. retrieve the vertex/fragment source code from filePath
+    // 1. retrieve the vertex/fragment source code from filePath
 	std::string vertexCode;
 	std::string fragmentCode;
 	std::ifstream vShaderFile;

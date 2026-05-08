@@ -116,7 +116,6 @@ void Galaxy::Barnes_hut(int star_id)
         QuadTree* current = BH_queue.front();
         if(current->star_id != -1) // if node is a leaf
         {
-            std::cout << this->stars[star_id].position.x << ", " << this->stars[current -> star_id].position.x << std::endl;
             Vector2 F = this->stars[current->star_id].force_field(this->stars[star_id].position - this->stars[current -> star_id].position);
             this->stars[star_id].apply_force(F, this->time_step);
     
@@ -129,7 +128,6 @@ void Galaxy::Barnes_hut(int star_id)
             
             if (s/d < this->BH_theta) // If sufficiently far away
             {
-                std::cout << this->stars[star_id].position.x << ", " << -current->star_pos.x << std::endl;
                 Vector2 F = Star(current->star_pos.x, current->star_pos.y, current->mass).force_field(this->stars[star_id].position - current->star_pos);
                 this->stars[star_id].apply_force(F, this->time_step);
             }
@@ -143,37 +141,19 @@ void Galaxy::Barnes_hut(int star_id)
     }
 }
 
-<<<<<<< HEAD
-void Galaxy::Update()
-{
-    if(this->algo_type == Algorithm::Barnes_Hut)
-    {
-        this->BH_tree = new QuadTree{{nullptr, nullptr, nullptr, nullptr}, -1, Vector2(0,0), Vector2(window_size/2, window_size/2), 0};
-        this->Update_tree();
-    }
-=======
+
 void Galaxy::Update(){
     if(this->algo_type == Algorithm::Barnes_Hut){ 
-        this->Delete_tree(this->BH_tree);
         this->Update_tree();
     }
-
->>>>>>> 63d3d1b007a46e39dcf96c9ab405a0ac4d215e1a
+    std::cout << "tree Updated" << std::endl;
     for(int i = 0; i < this->star_count; i++){
         this->calculate_force(i);
         this->stars[i].update_position(this->time_step);
     }
-<<<<<<< HEAD
+    std::cout << "Forces applied" << std::endl;
     if(this->algo_type == Algorithm::Barnes_Hut)
-        delete_tree(this->BH_tree);
-}
- void Galaxy::Update_tree(){
-    for(int i = 0; i < this->star_count; i++)
-    {
-        this->insert_star_in_tree(this->stars[i].position.x, this->stars[i].position.y, i, this->BH_tree);
-    }
-=======
-
+        Delete_tree(this->BH_tree);
 }
 
 void Galaxy::Update_tree(){
@@ -190,7 +170,6 @@ void Galaxy::Delete_tree(QuadTree* tree){
             Delete_tree(tree->childs[i]);
     }
     delete tree;
->>>>>>> 63d3d1b007a46e39dcf96c9ab405a0ac4d215e1a
 }
 
 void Galaxy::insert_star_in_tree(double x, double y, int id, QuadTree *tree){
@@ -217,15 +196,8 @@ void Galaxy::insert_star_in_tree(double x, double y, int id, QuadTree *tree){
         int last_id = tree->star_id;
         Vector2 last_pos = tree->star_pos;
 
-<<<<<<< HEAD
        (*tree).star_id = -1;
         tree->star_pos = (tree->mass*tree->star_pos + this->stars[id].mass*this->stars[id].position)/(tree->mass + this->stars[id].mass);
-
-        
-=======
-        tree->star_id = -1;
-        tree->star_pos = (tree->mass * tree->star_pos + this->stars[id].mass*this->stars[id].position)/(tree->mass * this->stars[id].mass);
->>>>>>> 63d3d1b007a46e39dcf96c9ab405a0ac4d215e1a
         tree->mass += this->stars[id].mass;
 
         insert_star_in_tree(x, y, id, tree);
@@ -234,6 +206,7 @@ void Galaxy::insert_star_in_tree(double x, double y, int id, QuadTree *tree){
 }
 
 void Galaxy::Draw(){
+    std::cout << "drawing" << std::endl;
     for(int i = 0; i < this->star_count; i++)
     {
         this->shader.use();
