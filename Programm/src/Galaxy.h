@@ -17,7 +17,9 @@ public:
         //      │
     int star_id;
     Vector2 star_pos; // Alse used as the center of mass
-    Vector2 center;
+    ste::vector<int> star_list;
+    Vector2 center_mass;
+    Vector2 quad_center;
     double mass;
     int depth;
 };
@@ -51,10 +53,7 @@ public:
     Galaxy(int window_size, Algorithm type);
     ~Galaxy();
 
-    void insert_star_in_tree (double x, double y, int id, QuadTree *tree);
     void Update();
-    void Update_tree();
-    void Delete_tree(QuadTree* tree);
     void Draw();
 
 private:
@@ -72,7 +71,14 @@ private:
     void calculate_force(int star_id);
     void Naive(int star_id);
     void Barnes_hut(int star_id);
+   
+    // Tree functions
+    bool is_on_screen(int id);
+    void insert_star_in_tree (double x, double y, int id, QuadTree *tree);
+    void Update_tree();
+    void Delete_tree(QuadTree* tree);
     
+
     //Rendering variables
     int window_size;
     const double star_radius = 10;
