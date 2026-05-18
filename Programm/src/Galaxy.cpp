@@ -1,5 +1,9 @@
 #include "Galaxy.h"
 
+QuadTree::get_quadrant(Vector2 pos){
+    return (pos.x >= this->quad_center.x) + 2*(pos.y < this->quad_center.y);
+}
+
 Star::Star(){}
 Star::Star(double x, double y, double mass){
     this->position = Vector2(x, y);
@@ -29,7 +33,7 @@ Galaxy::Galaxy(int window_size, Algorithm type){
     this->algo_type = type;
     this->window_size = window_size;
     // Init list of stars
-    this->star_count = 10;
+    this->star_count = 10000;
     this->stars = new Star[this->star_count];
 
     // Randomly generates stars
@@ -39,18 +43,14 @@ Galaxy::Galaxy(int window_size, Algorithm type){
     for(int i = 0; i < this->star_count; i++)
     {
         double r = d(gen);
-        double t = static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/3));
+        double t = (PI/2) * static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/3));
         this->stars[i] = Star(r*cos(t), r*sin(t), pow(10, 11));
     }
     this->stars[0] = Star(0, 0, pow(10, 19));
-    
-    
-    this->BH_tree = new QuadTree{{nullptr, nullptr, nullptr, nullptr}, -1, Vector2(0,0), Vector2(window_size/2, window_size/2), 0};
-
     // Init shader
-	this->shader = Shader("Shader/star_vert.shader", "Shader/star_frag.shader");
+    this->shader = Shader("Shader/star_vert.shader", "Shader/star_frag.shader");
     //Create the star object for rendering
-	float vertices[] = {// Array holdind the vertices of the square holding the circle
+    float vertices[] = {// Array holdind the vertices of the square holding the circle
         // First triangle 
          0.5, 0.5,
          0.5,-0.5,
@@ -61,20 +61,19 @@ Galaxy::Galaxy(int window_size, Algorithm type){
         -0.5, 0.5
     };
     glGenVertexArrays(1, &this->VAO);
-	glGenBuffers(1, &this->VBO);
+    glGenBuffers(1, &this->VBO);
 
-	glBindVertexArray(this->VAO); // Bind the VAO first
+    glBindVertexArray(this->VAO); // Bind the VAO first
 
-	// Then configure the VBO
-	glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
-	glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(float), vertices, GL_STATIC_DRAW);
+    // Then configure the VBO
+    glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
+    glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(float), vertices, GL_STATIC_DRAW);
+    // Finaly configure the VAO
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
 
-	// Finaly configure the VAO
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0); // Unbind the VBO
-	glBindVertexArray(0); // Unbind the VAO
+    glBindBuffer(GL_ARRAY_BUFFER, 0); // Unbind the VBO
+    glBindVertexArray(0); // Unbind the VAO
 }
 
 Galaxy::~Galaxy(){
@@ -100,13 +99,16 @@ void Galaxy::Draw(){
         this->shader.use();
         shader.set_vec2("offset", this->stars[i].position);
         glBindVertexArray(this->VAO);
-		glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
+        glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
     }
 }
 
-void Galaxy::calculate_force(int star_id)
-{
+Vector2 Galaxy::get_star_pos(int id){
+    return this->stars[id].position;
+}
+
+void Galaxy::calculate_force(int star_id){
     switch (this->algo_type) {
         case Algorithm::Naive: 
             this->Naive(star_id);break;
@@ -125,9 +127,8 @@ void Galaxy::Naive(int star_id){
         this->stars[star_id].apply_force(F, this->time_step);
     }
 }
- 
+
 void Galaxy::Barnes_hut(int star_id){
-    TODO: CHANGE TO VECTOR
     this->BH_queue = std::queue<QuadTree*>();
     for(int i = 0; i < 4; i++)
         if (this->BH_tree->childs[i] != nullptr)
@@ -136,25 +137,22 @@ void Galaxy::Barnes_hut(int star_id){
     for(;!BH_queue.empty();BH_queue.pop())
     {
         QuadTree* current = BH_queue.front();
-        if(current->star_id != -1) // if node is a leaf
-        {
-            Vector2 F = this->stars[current->star_id].force_field(this->stars[star_id].position - this->stars[current -> star_id].position);
-            this->stars[star_id].apply_force(F, this->time_step);
-    
+        if(current->star_list.size() >= 1){ // If one star or more are in the quadrant
+            for(int i = 0; i < current->star_list.size(); i++){
+                    Vector2 F = this->stars[current->star_list[i]].force_field(this->stars[star_id].position - this->stars[current->star_list[i]].position);
+                    this->stars[star_id].apply_force(F, this->time_step);            
+            }
         }
-        else // If its not a leaf
-        {
+        else{ // If its not a leaf
             // Apply Barnes-Hut test
             double d = dist(this->stars[star_id].position, current->quad_center);
-            double s = this->window_size* pow(2, -current->depth);
+            double s = pow(2, -current->depth);
             
-            if (s/d < this->BH_theta) // If sufficiently far away
-            {
-                Vector2 F = Star(current->star_pos.x, current->star_pos.y, current->mass).force_field(this->stars[star_id].position - current->star_pos);
+            if (s/d < this->BH_theta){ // If sufficiently far away
+                Vector2 F = Star(current->mass_center.x, current->mass_center.y, current->mass).force_field(this->stars[star_id].position - current->mass_center);
                 this->stars[star_id].apply_force(F, this->time_step);
             }
-            else // If too close
-            {
+            else{ // If too close
                 for(int i = 0; i < 4; i++)
                     if (current->childs[i] != nullptr)
                         BH_queue.push(current->childs[i]);
@@ -164,55 +162,54 @@ void Galaxy::Barnes_hut(int star_id){
 }
 
 bool Galaxy::is_on_screen(int id){
-    Vector2 pos = this->stars[id].position;
-    return (pos.x <= 0.5)&&(pos.x >=-0.5)&&(pos.y>=-0.5)&&(pos.y<=0.5); 
+Vector2 pos = this->stars[id].position;
+return (pos.x <= 0.5)&&(pos.x >=-0.5)&&(pos.y>=-0.5)&&(pos.y<=0.5); 
 
 }
 
 void Galaxy::insert_star_in_tree(double x, double y, int id, QuadTree *tree){
     if(!this->is_on_screen(id))
         return;
-    std::cout << id << "\t " << x << ", " << y << "\t" << tree->depth + 1 << "\n";
-    if(tree->star_id == -1) { // if not a leaf
-        TODO: ADDAPT TO VECTOR 
-        int quadrant = (x >= tree->quad_center.x) + 2*(y < tree->quad_center.y);
+    if(tree->star_list.size() == 0) { // if not a leaf
+        int quadrant = tree->get_quadrant(Vector2(x, y));
         if(tree->childs[quadrant] != nullptr) // if quadrant not empty, modify mass stuff and recurse into it
         {
-            tree->star_pos = (tree->mass*tree->star_pos + this->stars[id].mass*this->stars[id].position)/(tree->mass + this->stars[id].mass);
+            tree->mass_center = (tree->mass * tree->mass_center + this->stars[id].mass*this->stars[id].position)/(tree->mass + this->stars[id].mass);
             tree->mass += this->stars[id].mass;
             insert_star_in_tree(x, y, id, tree->childs[quadrant]);
         }
         else{ // if quadrant empty, then displace the leaf
             tree->childs[quadrant] = new QuadTree {
-                                              {nullptr, nullptr, nullptr, nullptr},
-                                              id,
-                                              tree->star_pos,
-                                              tree->quad_center + Vector2(pow(-1, 1 - (quadrant % 2)) / pow(2, tree->depth + 1),
-                                                                     pow(-1,     (quadrant / 2)) / pow(2, tree->depth + 1)),
-                                              tree->mass,
-                                              tree->depth + 1
+                                                {nullptr, nullptr, nullptr, nullptr},
+                                                std::vector<int>{id},
+                                                Vector2(x, y),
+                                                tree->quad_center + (pow(2, -tree->depth - 1))*Vector2(pow(-1,1-(quadrant%2)),pow(-1,(quadrant/2))),
+                                                tree->mass,
+                                                tree->depth + 1
             };
         }
     }
     else {
-        TODO: DISTANCE CHECK and vector handling
-        if(tree->star_list.size() > 1 || dist(tree->star_list[0], this->stars[id].position) < EPSILON) {// if already multiple stars in the cell or too close to a star
-            tree->mass_center = (tree->mass * tree->mass_center + this->stars[id].mass * this->stars[id].position)/(tree->mass + this_>stars[id].mass);
+        if(tree->star_list.size() > 1 || dist(tree->quad_center, Vector2(x, y)) < EPSILON) {// if already multiple stars in the cell or too close to a star
+            tree->mass_center = (tree->mass * tree->mass_center + this->stars[id].mass * this->stars[id].position)/(tree->mass + this->stars[id].mass);
             tree->mass += this->stars[id].mass;
-            tree->star_list.append(id);
+            tree->star_list.push_back(id);
         }
-        int last_id = tree->star_id;
-        Vector2 last_pos = tree->star_pos;
-        tree->star_id = -1;
-        tree->star_pos = (tree->mass*tree->star_pos + this->stars[id].mass*this->stars[id].position)/(tree->mass + this->stars[id].mass);
-        tree->mass += this->stars[id].mass;
-        insert_star_in_tree(x, y, id, tree);
-        insert_star_in_tree(last_pos.x, last_pos.y, last_id, tree);
+        else{
+            int last_id = tree->star_list[0];
+            Vector2 last_pos = this->stars[last_id].position;
+            tree->star_list = std::vector<int>();
+            tree->mass_center = (tree->mass*tree->mass_center + this->stars[id].mass*this->stars[id].position)/(tree->mass + this->stars[id].mass);
+            tree->mass += this->stars[id].mass;
+            insert_star_in_tree(x, y, id, tree);
+            insert_star_in_tree(last_pos.x, last_pos.y, last_id, tree);
+        }
+       
     }
 }
 
 void Galaxy::Update_tree(){
-    this->BH_tree = new QuadTree{{nullptr, nullptr, nullptr, nullptr}, , Vector2(0, 0), 0, 0};
+    this->BH_tree = new QuadTree{{nullptr, nullptr, nullptr, nullptr}, std::vector<int>(), Vector2(0, 0), Vector2(0, 0), 0, 0};
     for(int i = 0; i < this->star_count; i++){
         if(!this->is_on_screen(i))
             continue;

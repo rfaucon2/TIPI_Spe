@@ -5,7 +5,7 @@
 #include "shader.h"
 #define G 6.674*pow(10, -11) //m^3 kg^-1 switch 
 #define PI 3.14159
-#define EPSILON 0.00001
+#define EPSILON 0.0000001
 
 class QuadTree{
 public:
@@ -15,13 +15,13 @@ public:
         // ─────┼────>
         //   2  │  3
         //      │
-    int star_id;
-    Vector2 star_pos; // Alse used as the center of mass
-    ste::vector<int> star_list;
-    Vector2 center_mass;
+    std::vector<int> star_list;
+    Vector2 mass_center;
     Vector2 quad_center;
     double mass;
     int depth;
+
+    int get_quadrant(Vector2 pos);
 };
 
 class Star{
@@ -55,7 +55,7 @@ public:
 
     void Update();
     void Draw();
-
+    Vector2 get_star_pos(int id);
 private:
     // Objects varables
     double time_step = 0.0000001;

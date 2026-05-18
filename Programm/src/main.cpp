@@ -1,6 +1,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include <fstream>
 #include "shader.h"
 #include <assert.h>
 #include "Galaxy.h"
@@ -43,7 +44,7 @@ GLFWwindow* init_window(int window_size)
 
 int main()
 {
-    int window_size= 1000;
+    int window_size = 1000;
     GLFWwindow* window = init_window(window_size);	
     Galaxy galaxy(window_size, Algorithm::Barnes_Hut);
 
@@ -51,12 +52,18 @@ int main()
     double prev_time = 0.f;
     int fps = 0.f;
 
-	while (!glfwWindowShouldClose(window)) // Main Loop
+    int frame_counter = 0;
+    std::ofstream record("../../Data/BH_record.csv");
+    record << "time, x, y\n";
+
+    while (!glfwWindowShouldClose(window) && frame_counter <= 500) // Main Loop
 	{
         process_input(window);
 
         curent_time = glfwGetTime();
         galaxy.Update();
+        Vector2 pos = galaxy.get_star_pos(1);
+        record << frame_counter << ", " << pos.x << ", " << pos.y <<"\n";
         
         double dt = curent_time - prev_time;
         prev_time = curent_time;
@@ -68,8 +75,10 @@ int main()
 
 		glfwSwapBuffers(window); 
 		glfwPollEvents();
+        frame_counter += 1;
 	}
 
+    record.close();
 	glfwTerminate();
 	return 0;
 }
