@@ -56,7 +56,7 @@ int main()
     std::ofstream record("../../Data/BH_record.csv");
     record << "time, x, y\n";
 
-    while (!glfwWindowShouldClose(window) && frame_counter <= 500) // Main Loop
+    while (!glfwWindowShouldClose(window) /* && frame_counter <= 500*/) // Main Loop
 	{
         process_input(window);
 

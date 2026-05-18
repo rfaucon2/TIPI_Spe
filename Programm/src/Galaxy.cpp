@@ -137,16 +137,18 @@ void Galaxy::Barnes_hut(int star_id){
     for(;!BH_queue.empty();BH_queue.pop())
     {
         QuadTree* current = BH_queue.front();
-        if(current->star_list.size() >= 1){ // If one star or more are in the quadrant
-            for(int i = 0; i < current->star_list.size(); i++){
-                    Vector2 F = this->stars[current->star_list[i]].force_field(this->stars[star_id].position - this->stars[current->star_list[i]].position);
-                    this->stars[star_id].apply_force(F, this->time_step);            
-            }
+        if(current->star_list.size() == 1){
+            Vector2 F = this->stars[current->star_list[0]].force_field(this->stars[star_id].position - this->stars[current->star_list[0]].position);
+            this->stars[star_id].apply_force(F, this->time_step);
+        }
+        else if(current->star_list.size() > 1){ // If more than one star are in the quadrant, approximate
+            Vector2 F = Star(current->mass_center.x, current->mass_center.y, current->mass).force_field(this->stars[star_id].position - current->mass_center);
+                this->stars[star_id].apply_force(F, this->time_step);
         }
         else{ // If its not a leaf
             // Apply Barnes-Hut test
             double d = dist(this->stars[star_id].position, current->quad_center);
-            double s = pow(2, -current->depth);
+            double s = 2*pow(2, -current->depth);
             
             if (s/d < this->BH_theta){ // If sufficiently far away
                 Vector2 F = Star(current->mass_center.x, current->mass_center.y, current->mass).force_field(this->stars[star_id].position - current->mass_center);
@@ -163,7 +165,7 @@ void Galaxy::Barnes_hut(int star_id){
 
 bool Galaxy::is_on_screen(int id){
 Vector2 pos = this->stars[id].position;
-return (pos.x <= 0.5)&&(pos.x >=-0.5)&&(pos.y>=-0.5)&&(pos.y<=0.5); 
+return (pos.x <= 1)&&(pos.x >=-1)&&(pos.y>=-1)&&(pos.y<=1); 
 
 }
 
@@ -183,7 +185,7 @@ void Galaxy::insert_star_in_tree(double x, double y, int id, QuadTree *tree){
                                                 {nullptr, nullptr, nullptr, nullptr},
                                                 std::vector<int>{id},
                                                 Vector2(x, y),
-                                                tree->quad_center + (pow(2, -tree->depth - 1))*Vector2(pow(-1,1-(quadrant%2)),pow(-1,(quadrant/2))),
+                                                tree->quad_center + 2*(pow(2, -tree->depth - 1))*Vector2(pow(-1,1-(quadrant%2)),pow(-1,(quadrant/2))),
                                                 tree->mass,
                                                 tree->depth + 1
             };

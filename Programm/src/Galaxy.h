@@ -63,7 +63,7 @@ private:
     Star *stars;
 
     // Barnes-Hut 
-    double BH_theta = 0.5;
+    double BH_theta = 2;
     QuadTree *BH_tree;
     std::queue<QuadTree*> BH_queue;
 
