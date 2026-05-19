@@ -53,17 +53,18 @@ int main()
     int fps = 0.f;
 
     int frame_counter = 0;
-    std::ofstream record("../../Data/BH_record.csv");
-    record << "time, x, y\n";
+    std::ofstream record("Data/BH_record.csv");
+    std::cout << record.is_open() << std::endl;
+    record << "time, vx, vy\n";
 
-    while (!glfwWindowShouldClose(window) /* && frame_counter <= 500*/) // Main Loop
+    while (!glfwWindowShouldClose(window) /*&& frame_counter <= 500*/) // Main Loop
 	{
         process_input(window);
 
         curent_time = glfwGetTime();
         galaxy.Update();
-        Vector2 pos = galaxy.get_star_pos(1);
-        record << frame_counter << ", " << pos.x << ", " << pos.y <<"\n";
+        Vector2 speed = galaxy.get_star_speed(0);
+        record << frame_counter << ", " << speed.x << ", " << speed.y <<"\n";
         
         double dt = curent_time - prev_time;
         prev_time = curent_time;

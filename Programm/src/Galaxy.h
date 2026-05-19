@@ -3,9 +3,16 @@
 
 #include <queue>
 #include "shader.h"
-#define G 6.674*pow(10, -11) //m^3 kg^-1 switch 
-#define PI 3.14159
-#define EPSILON 0.0000001
+
+#define G                   6.674*pow(10, -11)      //[m^3 s^-2 kg^-1]
+#define PI                  3.14159
+#define EPSILON             0.00001
+#define AL                  * 9.5*pow(10,15)        // Année lumière [m]
+#define M_SOL               * 2*pow(10, 30)         // Masse solaire [kg]
+#define K                   (G M_SOL / (1 AL* 1 AL * 1 AL))
+#define SCREEN_WORLD_WIDTH  200000                  // [AL]
+
+Vector2 world_to_screen_coord(Vector2 pos);
 
 class QuadTree{
 public:
@@ -16,9 +23,9 @@ public:
         //   2  │  3
         //      │
     std::vector<int> star_list;
-    Vector2 mass_center;
-    Vector2 quad_center;
-    double mass;
+    Vector2 mass_center; // [AL]
+    Vector2 quad_center; // [AL]
+    double mass;         // [M_SOL]
     int depth;
 
     int get_quadrant(Vector2 pos);
@@ -26,11 +33,10 @@ public:
 
 class Star{
 public:
-    Vector2 speed;
-    Vector2 position;
+    Vector2 speed;      // [m s^-1]
+    Vector2 position;   // [Al]
 
-    double mass;
-    double radius;
+    double mass;        // [M_SOL]
     const double max_speed = 10;
 
     Star();
@@ -42,6 +48,7 @@ public:
     void apply_force(Vector2 f, double dt);
     void update_position(double dt);
 };
+
 enum Algorithm {
     Naive,
     Barnes_Hut,
@@ -56,14 +63,15 @@ public:
     void Update();
     void Draw();
     Vector2 get_star_pos(int id);
+    Vector2 get_star_speed(int id);
 private:
     // Objects varables
-    double time_step = 0.0000001;
+    double time_step = pow(10, 13);
     int star_count;
     Star *stars;
 
     // Barnes-Hut 
-    double BH_theta = 2;
+    double BH_theta = 0.5;
     QuadTree *BH_tree;
     std::queue<QuadTree*> BH_queue;
 
@@ -81,7 +89,6 @@ private:
 
     //Rendering variables
     int window_size;
-    const double star_radius = 10;
     unsigned int VAO;
     unsigned int VBO;
     Shader shader;

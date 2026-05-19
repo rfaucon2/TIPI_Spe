@@ -1,5 +1,9 @@
 #include "Galaxy.h"
 
+Vector2 world_to_screen_coord(Vector2 pos){
+    return Vector2(2*pos.x/SCREEN_WORLD_WIDTH, 2*pos.y/SCREEN_WORLD_WIDTH);
+}
+
 QuadTree::get_quadrant(Vector2 pos){
     return (pos.x >= this->quad_center.x) + 2*(pos.y < this->quad_center.y);
 }
@@ -9,22 +13,27 @@ Star::Star(double x, double y, double mass){
     this->position = Vector2(x, y);
     this->speed = Vector2(0, 0);
     this->mass = mass;
-    this->radius = mass;
 }
+
 void Star::operator=(Star s){
     this->speed = s.speed;
     this->position = s.position;
     this->mass = s.mass;
-    this->radius = s.radius;
-
 }
+
 Vector2 Star::force_field(Vector2 uTov){
     double d = std::max(dist(uTov, Vector2(0, 0)), EPSILON);
-    return -(G*this->mass/pow(d, 3)) * uTov;  
+    return -(K*this->mass/pow(d, 3)) * uTov;  
 }
+
 void Star::apply_force(Vector2 f, double dt){
-    this->speed += dt * f; 
+    double d = dist(dt*f, Vector2(0, 0));
+    if (d < max_speed)
+        this->speed += dt * f;
+    else 
+        this->speed += dt*this->max_speed*(1/d)*f;
 }
+
 void Star::update_position(double dt){
     this->position += dt * this->speed;
 }
@@ -33,7 +42,7 @@ Galaxy::Galaxy(int window_size, Algorithm type){
     this->algo_type = type;
     this->window_size = window_size;
     // Init list of stars
-    this->star_count = 10000;
+    this->star_count = 100;
     this->stars = new Star[this->star_count];
 
     // Randomly generates stars
@@ -42,11 +51,12 @@ Galaxy::Galaxy(int window_size, Algorithm type){
     std::normal_distribution<float> d{0, 0.7};
     for(int i = 0; i < this->star_count; i++)
     {
-        double r = d(gen);
+        double r = d(gen) * SCREEN_WORLD_WIDTH/2;
         double t = (PI/2) * static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/3));
-        this->stars[i] = Star(r*cos(t), r*sin(t), pow(10, 11));
+        this->stars[i] = Star(r*cos(t), r*sin(t), 1);
     }
-    this->stars[0] = Star(0, 0, pow(10, 19));
+    this->stars[0] = Star(0, 0, 4.4 * pow(10, 6));
+
     // Init shader
     this->shader = Shader("Shader/star_vert.shader", "Shader/star_frag.shader");
     //Create the star object for rendering
@@ -62,7 +72,6 @@ Galaxy::Galaxy(int window_size, Algorithm type){
     };
     glGenVertexArrays(1, &this->VAO);
     glGenBuffers(1, &this->VBO);
-
     glBindVertexArray(this->VAO); // Bind the VAO first
 
     // Then configure the VBO
@@ -94,10 +103,14 @@ void Galaxy::Update(){
 }
 
 void Galaxy::Draw(){
-    for(int i = 0; i < this->star_count; i++)
+    for(int i = this->star_count -1; i >= 0; i--)
     {
         this->shader.use();
-        shader.set_vec2("offset", this->stars[i].position);
+        shader.set_vec2("offset", world_to_screen_coord(this->stars[i].position));
+        if(this->stars[i].mass < pow(10, 6)) 
+            shader.set_float("col", 0);
+        else 
+            shader.set_float("col", 1);
         glBindVertexArray(this->VAO);
         glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
         glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -106,6 +119,10 @@ void Galaxy::Draw(){
 
 Vector2 Galaxy::get_star_pos(int id){
     return this->stars[id].position;
+}
+
+Vector2 Galaxy::get_star_speed(int id){
+    return this->stars[id].speed;
 }
 
 void Galaxy::calculate_force(int star_id){
@@ -128,6 +145,13 @@ void Galaxy::Naive(int star_id){
     }
 }
 
+bool is_in_vector(std::vector<int> v, int val){
+    for(int i = 0; i < v.size(); i++)
+        if(v[i] == val)
+            return true;
+    return false;
+}
+
 void Galaxy::Barnes_hut(int star_id){
     this->BH_queue = std::queue<QuadTree*>();
     for(int i = 0; i < 4; i++)
@@ -141,14 +165,25 @@ void Galaxy::Barnes_hut(int star_id){
             Vector2 F = this->stars[current->star_list[0]].force_field(this->stars[star_id].position - this->stars[current->star_list[0]].position);
             this->stars[star_id].apply_force(F, this->time_step);
         }
-        else if(current->star_list.size() > 1){ // If more than one star are in the quadrant, approximate
-            Vector2 F = Star(current->mass_center.x, current->mass_center.y, current->mass).force_field(this->stars[star_id].position - current->mass_center);
+        // If the star is in the quadrant, don't approximate
+        else if (is_in_vector(current->star_list, star_id)){
+            for(int i = 0; i < current->star_list.size(); i++){
+                if(current->star_list[i] == star_id)
+                    continue;
+                Vector2 F = this->stars[current->star_list[i]].force_field(this->stars[star_id].position - this->stars[current->star_list[i]].position);
                 this->stars[star_id].apply_force(F, this->time_step);
+            }
         }
-        else{ // If its not a leaf
+        // If more than one star are in the quadrant, approximate
+        else if(current->star_list.size() > 1){
+            Vector2 F = Star(current->mass_center.x, current->mass_center.y, current->mass).force_field(this->stars[star_id].position - current->mass_center);
+            this->stars[star_id].apply_force(F, this->time_step);
+        }
+        // If its not a leaf
+        else{ 
             // Apply Barnes-Hut test
             double d = dist(this->stars[star_id].position, current->quad_center);
-            double s = 2*pow(2, -current->depth);
+            double s = SCREEN_WORLD_WIDTH*pow(2, -current->depth);
             
             if (s/d < this->BH_theta){ // If sufficiently far away
                 Vector2 F = Star(current->mass_center.x, current->mass_center.y, current->mass).force_field(this->stars[star_id].position - current->mass_center);
@@ -164,9 +199,8 @@ void Galaxy::Barnes_hut(int star_id){
 }
 
 bool Galaxy::is_on_screen(int id){
-Vector2 pos = this->stars[id].position;
-return (pos.x <= 1)&&(pos.x >=-1)&&(pos.y>=-1)&&(pos.y<=1); 
-
+    Vector2 pos = this->stars[id].position;
+    return (pos.x <= SCREEN_WORLD_WIDTH/2)&&(pos.x >=-SCREEN_WORLD_WIDTH/2)&&(pos.y>=-SCREEN_WORLD_WIDTH/2)&&(pos.y<=SCREEN_WORLD_WIDTH/2); 
 }
 
 void Galaxy::insert_star_in_tree(double x, double y, int id, QuadTree *tree){
@@ -185,7 +219,7 @@ void Galaxy::insert_star_in_tree(double x, double y, int id, QuadTree *tree){
                                                 {nullptr, nullptr, nullptr, nullptr},
                                                 std::vector<int>{id},
                                                 Vector2(x, y),
-                                                tree->quad_center + 2*(pow(2, -tree->depth - 1))*Vector2(pow(-1,1-(quadrant%2)),pow(-1,(quadrant/2))),
+                                                tree->quad_center + SCREEN_WORLD_WIDTH*(pow(2, -tree->depth - 1))*Vector2(pow(-1,1-(quadrant%2)),pow(-1,(quadrant/2))),
                                                 tree->mass,
                                                 tree->depth + 1
             };
