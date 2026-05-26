@@ -53,21 +53,21 @@ int main()
     int fps = 0.f;
 
     int frame_counter = 0;
-    std::ofstream record("Data/BH_record.csv");
+    std::ofstream record("Data/BH_fps"+std::to_string(galaxy.get_precision()) +".csv");
     std::cout << record.is_open() << std::endl;
-    record << "time, vx, vy\n";
+    record << "frame, fps\n";
 
-    while (!glfwWindowShouldClose(window) /*&& frame_counter <= 500*/) // Main Loop
+    while (!glfwWindowShouldClose(window) && frame_counter <= 500) // Main Loop
 	{
         process_input(window);
 
         curent_time = glfwGetTime();
         galaxy.Update();
         Vector2 speed = galaxy.get_star_speed(0);
-        record << frame_counter << ", " << speed.x << ", " << speed.y <<"\n";
         
         double dt = curent_time - prev_time;
         prev_time = curent_time;
+        record << frame_counter << ", " << 1/dt << "\n";
         glfwSetWindowTitle(window, (std::string("Simulation: ") + std::to_string(1/dt)).c_str());
 		glClearColor(0.f, 0.f, 0.f, 0.f);
 		glClear(GL_COLOR_BUFFER_BIT); // Apply the color previously set

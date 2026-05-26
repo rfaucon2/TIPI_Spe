@@ -6,7 +6,7 @@
 
 #define G                   6.674*pow(10, -11)      //[m^3 s^-2 kg^-1]
 #define PI                  3.14159
-#define EPSILON             0.00001
+#define EPSILON             0.001
 #define AL                  * 9.5*pow(10,15)        // Année lumière [m]
 #define M_SOL               * 2*pow(10, 30)         // Masse solaire [kg]
 #define K                   (G M_SOL / (1 AL* 1 AL * 1 AL))
@@ -64,6 +64,7 @@ public:
     void Draw();
     Vector2 get_star_pos(int id);
     Vector2 get_star_speed(int id);
+    double get_precision();
 private:
     // Objects varables
     double time_step = pow(10, 13);
@@ -71,7 +72,7 @@ private:
     Star *stars;
 
     // Barnes-Hut 
-    double BH_theta = 0.5;
+    double BH_theta = 0.05;
     QuadTree *BH_tree;
     std::queue<QuadTree*> BH_queue;
 
