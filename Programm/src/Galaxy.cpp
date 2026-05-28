@@ -38,15 +38,15 @@ void Star::update_position(double dt){
     this->position += dt * this->speed;
 }
 
-Galaxy::Galaxy(int window_size, Algorithm type){
+Galaxy::Galaxy(int window_size, Algorithm type, unsigned long star_count, double theta, unsigned long seed){
     this->algo_type = type;
     this->window_size = window_size;
     // Init list of stars
-    this->star_count = 1000;
+    this->star_count = star_count;
     this->stars = new Star[this->star_count];
+    this->BH_theta = theta;
 
     // Randomly generates stars
-    unsigned int seed = 98204398; 
     //std::random_device rd{}; 
     std::mt19937 gen(seed);
     std::normal_distribution<float> d{0, 0.7};

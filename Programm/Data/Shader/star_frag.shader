@@ -1,0 +1,20 @@
+#version 330 core
+
+in vec2 vPos;
+in float c;
+
+out vec4 FragColor;
+
+void main()
+{
+    float uAspect = 1000.0/1000.0;
+    vec2 pos = vPos;
+    pos.x *= uAspect;
+
+    float radius = 0.003;
+    if (length(pos) > radius)
+        discard;   // Make outside transparent (or background)
+    
+    FragColor = vec4(c, 130.0/255.0, 191.0/255.0, 1.0);
+
+}

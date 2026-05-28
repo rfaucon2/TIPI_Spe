@@ -32,6 +32,7 @@ GLFWwindow* init_window(int window_size)
 	}
 
 	glfwMakeContextCurrent(window);
+    glfwSwapInterval(0);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) // Load GLAD
@@ -42,20 +43,45 @@ GLFWwindow* init_window(int window_size)
     return window;
 }
 
-int main()
-{
+int main(int argc, char** argv)
+{  
+    if (argc < 6)
+    {
+        Arg_fail: 
+            std::cout << "Invalide use: too few arguments \n"\
+                      << "Correct use: Simulation.exe [N(aive)/ BH] [star_count] [theta] [seed] [record name]\n";
+            return 1;
+    }
+    Algorithm algo_type;
+    unsigned long star_count, seed;
+    double theta;
+    std::string record_name;
+
+    if (!std::string(argv[1]).compare(std::string("N")))
+        algo_type = Algorithm::Naive;
+    else if (!std::string(argv[1]).compare(std::string("BH")))
+        algo_type = Algorithm::Barnes_Hut;
+    else{
+        std::cout << "Invalid algo type" << std::endl;
+        return 1;
+    }
+    star_count  = std::stoi(std::string(argv[2]));
+    theta       = std::stod(std::string(argv[3]));
+    seed        = std::stol(std::string(argv[4]));
+    record_name = std::string(argv[5]);
+
+
+
     int window_size = 1000;
     GLFWwindow* window = init_window(window_size);	
-    Galaxy galaxy(window_size, Algorithm::Barnes_Hut);
+    Galaxy galaxy(window_size, algo_type, star_count, theta, seed);
 
     double curent_time = 0.f;
     double prev_time = 0.f;
     int fps = 0.f;
 
     int frame_counter = 0;
-    std::ofstream record("Data/BH_fps"+std::to_string(galaxy.get_precision()) +".csv");
-    std::cout << record.is_open() << std::endl;
-    record << "frame, fps\n";
+    std::ofstream record(record_name);
 
     while (!glfwWindowShouldClose(window) && frame_counter <= 500) // Main Loop
 	{

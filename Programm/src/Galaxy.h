@@ -57,7 +57,7 @@ enum Algorithm {
 
 class Galaxy{
 public:
-    Galaxy(int window_size, Algorithm type);
+    Galaxy(int window_size, Algorithm type, unsigned long star_count, double theta, unsigned long speed);
     ~Galaxy();
 
     void Update();
@@ -68,11 +68,11 @@ public:
 private:
     // Objects varables
     double time_step = pow(10, 13);
-    int star_count;
+    unsigned long star_count;
     Star *stars;
 
     // Barnes-Hut 
-    double BH_theta = 0.05;
+    double BH_theta;
     QuadTree *BH_tree;
     std::queue<QuadTree*> BH_queue;
 
