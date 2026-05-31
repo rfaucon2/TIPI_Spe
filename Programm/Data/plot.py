@@ -2,8 +2,9 @@ import matplotlib.pyplot as plt
 import numpy as np 
 import csv
 from os import system as execute
+from random import randint
 
-def to_int_list(l):
+def to_float_list(l):
     out = []
     for v in l:
         out.append(float(v))
@@ -14,37 +15,42 @@ def average(l):
     for v in l:
         s+=v
     return s/len(l)
+
 # Generate data
 def gen_cmp_N_BH(theta):
-    N_list = np.logspace(1, 5, num = 15, base=10.0)
-    Naive_record_list = []
-    BH_record_list = []
-    seed = 980987
-    # Generate data
-    for N in [10, 20]:
-        execute(f"Simulation N {int(N)} {theta} {seed} N_record.csv")
-        with open("N_record.csv", "r+") as N_record:
-            Naive_record_list = np.array(list(csv.reader(N_record)))
-        
-        execute(f"Simulation BH {N} {theta} {seed} BH_record.csv")
-        with open("BH_record.csv", "r+") as BH_record:
-            BH_record_list = np.array(list(csv.reader(BH_record)))
-    # calculate average fps
+    N_list = np.logspace(1, 3.5, num = 10, base=10.0)
     N_avg_list  = []
     BH_avg_list = []
-    frame_count = len(Naive_record_list[0])
+    Tries = 5
+    # Generate data
+    for N in N_list:
+        print(f"{theta=}, {N=}")
+        N_avg = []
+        BH_avg = []
+        for i in range(Tries):                
+            seed = randint(0, 100000) 
+            execute(f"Simulation N {int(N)} {theta} {seed} N_record.csv")
+            with open("N_record.csv", "r+") as N_record:
+                N_record_list = np.array(list(csv.reader(N_record)))[:,1]
+                N_avg.append(average(to_float_list(N_record_list)))
+                
 
-    for i in range(len(BH_record_list)):
-        N_avg_list.append( average(to_int_list(Naive_record_list[i])))
-        BH_avg_list.append( average(to_int_list(BH_record_list[i])))
-    
-    print(theta)
+        for i in range(Tries):
+            seed = randint(0, 100000) 
+            execute(f"Simulation BH {N} {theta} {seed} BH_record.csv")
+            with open("BH_record.csv", "r+") as BH_record:
+                BH_record_list = np.array(list(csv.reader(BH_record)))[:,1]
+                BH_avg.append(average(to_float_list(BH_record_list)))
+        
+        N_avg_list.append(average(N_avg))
+        BH_avg_list.append(average(BH_avg))
+
+    # calculate average fps
     with open(f"record_theta_{theta}.csv", "w+") as output:
         for i in range(len(N_list)):
             output.write(f"{int(N_list[i])}, {N_avg_list[i]}, {BH_avg_list[i]}\n")
-            print(f"{int(N_list[i])}, {N_avg_list[i]}, {BH_avg_list[i]}")
 
-def display_data(theta):
+def display_cmp(theta):
     N_list = []
     N_avg_list = []
     BH_avg_list = []
@@ -60,15 +66,98 @@ def display_data(theta):
     print(N_avg_list)
     print(BH_avg_list)
 
-    plt.plot(N_list, N_avg_list)
-    plt.plot(N_list, BH_avg_list)
+    plt.plot(N_list, N_avg_list, label="Algorithme naif")
+    plt.plot(N_list, BH_avg_list, label=f"Barnes-Hut ($theta$ = {theta})")
 
+    plt.legend()
     plt.xlabel("N(Nombre d'etoile)")
-    plt.ylabel(f"Fps moyen sur 500 images")
+    plt.ylabel(f"Temps moyen de calcule d'une image sur 100 images (s)")
 
     plt.show()
 
-for theta in [1]:
-    gen_cmp_N_BH(theta)
+def gen_naive():
+    N_list = np.logspace(2, 4, num = 10, base=10.0)
+    N_avg_list  = []
+    # Generate data
+    for N in N_list:
+        print(f"{N=}")
+        N_avg = []
+        seed = randint(0, 100000) 
+        execute(f"Simulation N {int(N)} 0.1 {seed} N_record.csv")
+        with open("N_record.csv", "r+") as N_record:
+            N_record_list = np.array(list(csv.reader(N_record)))[:,1]
+            N_avg.append(average(to_float_list(N_record_list)))
+        N_avg_list.append(average(N_avg))
 
-display_data(1)
+    with open(f"record_naive.csv", "w+") as output:
+        for i in range(len(N_list)):
+            output.write(f"{int(N_list[i])}, {N_avg_list[i]}\n")
+
+def display_naive():
+    N_list = []
+    N_avg_list = []
+    with open(f"record_naive.csv", "r+") as file:
+        rec = list(csv.reader(file))
+        print(rec)
+        for c in rec:
+            N_list.append(int(c[0]))
+            N_avg_list.append(float(c[1]))
+    
+    plt.plot(np.log(N_list), np.log(N_avg_list), "-x")
+    a, b = np.polyfit(np.log(N_list), np.log(N_avg_list), 1)
+    print(a)
+    plt.plot(np.log(N_list), a*np.log(N_list)+b)
+    plt.xlabel("N(Nombre d'etoile)")
+    plt.ylabel(f"Temps moyen de calcule d'une image sur 100 images (s)")
+
+    plt.show()
+
+
+def gen_BH_theta():
+    t_list = np.linspace(0.1, 1.5, 10)
+    print(t_list)
+    data_list  = []
+    # Generate data
+    for theta in t_list:
+        print(f"{theta=}")
+        t_avg = []
+        seed = randint(0, 100000) 
+        execute(f"Simulation BH 1000 {theta} {seed} t_record.csv")
+        with open("t_record.csv", "r+") as t_record:
+            t_record_list = np.array(list(csv.reader(t_record)))[:,1]
+            data_list.append(average(to_float_list(t_record_list)))
+
+    with open(f"record_t.csv", "w+") as output:
+        for i in range(len(t_list)):
+            output.write(f"{t_list[i]}, {data_list[i]}\n")
+
+def display_BH_t():
+    t_list = []
+    t_avg_list = []
+    with open(f"record_t.csv", "r+") as file:
+        rec = list(csv.reader(file))
+        for c in rec:
+            t_list.append(float(c[0]))
+            t_avg_list.append(float(c[1]))
+    lt = np.log(t_list)
+    lta = np.log(t_avg_list)
+    plt.plot(lt, lta)
+    a, b = np.polyfit(lt, lta, 1)
+    plt.title(f"a={float(a)}")
+    plt.xlabel("log(theta)")
+    plt.ylabel(f"Temps moyen de calcule d'une image sur 100 images(N=1000) (s)")
+    plt.grid(True)
+    plt.show()
+
+
+    
+#for theta in [0.2, 0.5, 1]:
+#    gen_cmp_N_BH(theta)
+
+#display_data(1)
+
+#gen_naive()
+#display_naive()
+
+gen_BH_theta()
+display_BH_t()

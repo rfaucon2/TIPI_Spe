@@ -15,7 +15,6 @@
 Vector2 world_to_screen_coord(Vector2 pos);
 
 class QuadTree{
-public:
     QuadTree *childs[4]; 
         //      ^
         //   0  │  1
@@ -32,13 +31,10 @@ public:
 };
 
 class Star{
-public:
     Vector2 speed;      // [m s^-1]
     Vector2 position;   // [Al]
-
     double mass;        // [M_SOL]
     const double max_speed = 10;
-
     Star();
     Star(double x, double y, double mass);
 
@@ -67,7 +63,7 @@ public:
     double get_precision();
 private:
     // Objects varables
-    double time_step = pow(10, 13);
+    double time_step = pow(10, 15);
     unsigned long star_count;
     Star *stars;
 

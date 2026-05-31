@@ -83,7 +83,7 @@ int main(int argc, char** argv)
     int frame_counter = 0;
     std::ofstream record(record_name);
 
-    while (!glfwWindowShouldClose(window) && frame_counter <= 500) // Main Loop
+    while (!glfwWindowShouldClose(window) && frame_counter <= 100) // Main Loop
 	{
         process_input(window);
 
@@ -93,7 +93,7 @@ int main(int argc, char** argv)
         
         double dt = curent_time - prev_time;
         prev_time = curent_time;
-        record << frame_counter << ", " << 1/dt << "\n";
+        record << frame_counter << ", " << dt << "\n";
         glfwSetWindowTitle(window, (std::string("Simulation: ") + std::to_string(1/dt)).c_str());
 		glClearColor(0.f, 0.f, 0.f, 0.f);
 		glClear(GL_COLOR_BUFFER_BIT); // Apply the color previously set
