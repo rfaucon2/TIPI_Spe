@@ -103,13 +103,11 @@ def display_naive():
             N_list.append(int(c[0]))
             N_avg_list.append(float(c[1]))
     
-    plt.plot(np.log(N_list), np.log(N_avg_list), "-x")
-    a, b = np.polyfit(np.log(N_list), np.log(N_avg_list), 1)
-    print(a)
-    plt.plot(np.log(N_list), a*np.log(N_list)+b)
+    plt.plot(N_list,N_avg_list, "-x")
+
     plt.xlabel("N(Nombre d'etoile)")
     plt.ylabel(f"Temps moyen de calcule d'une image sur 100 images (s)")
-
+    plt.grid(True)
     plt.show()
 
 
@@ -149,6 +147,37 @@ def display_BH_t():
     plt.grid(True)
     plt.show()
 
+def gen_BH_N():
+    N_list = np.logspace(2, 5, 15)
+    data_list  = []
+    # Generate data
+    for N in N_list:
+        print(f"{N=}")
+        t_avg = []
+        seed = randint(0, 100000) 
+        execute(f"Simulation BH {N} 1.0 {seed} N_record.csv")
+        with open("N_record.csv", "r+") as N_record:
+            N_record_list = np.array(list(csv.reader(N_record)))[:,1]
+            data_list.append(average(to_float_list(N_record_list)))
+
+    with open(f"record_t.csv", "w+") as output:
+        for i in range(len(N_list)):
+            output.write(f"{N_list[i]}, {data_list[i]}\n")
+
+def display_BH_N():
+    t_list = []
+    t_avg_list = []
+    with open(f"record_t.csv", "r+") as file:
+        rec = list(csv.reader(file))
+        for c in rec:
+            t_list.append(float(c[0]))
+            t_avg_list.append(float(c[1]))
+    plt.xlabel("N")
+    plt.plot(t_list, t_avg_list, label="T(N)/NlogN")
+    plt.ylabel(f"Temps de calcul moyen sur 100 images (s)")
+    plt.title("Theta = 1.0")
+    plt.grid(True)
+    plt.show() 
 
     
 #for theta in [0.2, 0.5, 1]:
@@ -159,5 +188,8 @@ def display_BH_t():
 #gen_naive()
 #display_naive()
 
-gen_BH_theta()
-display_BH_t()
+#gen_BH_theta()
+#display_BH_t()
+
+gen_BH_N()
+display_BH_N()

@@ -1,0 +1,43 @@
+
+
+
+
+
+def inserer_dans_arbre(étoile, arbre):
+    si arbre ne contient pas d'étoile:
+        trouver quadrant de l'étoile    
+        si il existe une étoile dans le quadrant:
+            mettre a jour masse et centre de masse
+            inserer_dans_arbre(étoile, arbre[quadrant])
+        si le quadrant est vide:
+            mettre l'étoile dans cette feuille
+    sinon:
+        si l'arbre contient plusieurs étoiles ou sa largeur est inférieur à EPSILON:
+            mettre à jour centre de masse et masse de l'arbre 
+            ajouter l'étoile à l'arbre
+        sinon:
+            mettre à jour la masse et le centre de masse de l'arbre 
+            recupérer des données de l'étoile déjà présente et l'enlever de l'arbre
+            insérer à nouveau les deux étoiles dans cet arbre
+
+
+
+def Calculer_BH_force(étoile, arbre):
+    Queue <- créer une queue d'arbres
+    ajouter à Queue les quadrants non vides
+
+    tant que Queue est non vide:
+        quad = Queue.pop()
+        si quad contient 1 étoile:
+            calculer et appliquer la force 
+        sinon si quad contient étoile:
+            Calculer les forces de toutes les étoiles dans quad différentes de étoile 
+        sinon si quad contient plusieurs etoiles:
+            On calcule la force créé par le centre de masse du quadrant
+        sinon
+            critère <- appliquer le critère de Barnes_Hut
+            si critère == true:
+                On calcule la force créé par le centre de masse du quadrant
+            sinon
+                ajouter à Queue les quadrants non vides
+

@@ -18,7 +18,7 @@ class QuadTree{
     QuadTree *childs[4]; 
         //      ^
         //   0  │  1
-        // ─────┼────>
+        // ─────┼────>  
         //   2  │  3
         //      │
     std::vector<int> star_list;
