@@ -45,6 +45,7 @@ GLFWwindow* init_window(int window_size)
 
 int main(int argc, char** argv)
 {  
+    // Analyse les arguments du programme
     if (argc < 6)
     {
         Arg_fail: 
@@ -91,6 +92,7 @@ int main(int argc, char** argv)
         galaxy.Update();
         Vector2 speed = galaxy.get_star_speed(0);
         
+        // Calcule le temps de calcul, l'enregistre et affiche le FPS dans le titre de la fenêtre
         double dt = curent_time - prev_time;
         prev_time = curent_time;
         record << frame_counter << ", " << dt << "\n";
@@ -109,3 +111,7 @@ int main(int argc, char** argv)
 	glfwTerminate();
 	return 0;
 }
+
+
+
+

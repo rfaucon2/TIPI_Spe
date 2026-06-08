@@ -78,6 +78,7 @@ Galaxy::Galaxy(int window_size, Algorithm type, unsigned long star_count, double
     // Then configure the VBO
     glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
     glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(float), vertices, GL_STATIC_DRAW);
+    
     // Finaly configure the VAO
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
