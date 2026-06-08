@@ -46,8 +46,7 @@ Galaxy::Galaxy(int window_size, Algorithm type, unsigned long star_count, double
     this->stars = new Star[this->star_count];
     this->BH_theta = theta;
 
-    // Randomly generates stars
-    //std::random_device rd{}; 
+    // Genere les etoiles aleatoirement  
     std::mt19937 gen(seed);
     std::normal_distribution<float> d{0, 0.7};
     for(int i = 0; i < this->star_count; i++)
@@ -56,7 +55,7 @@ Galaxy::Galaxy(int window_size, Algorithm type, unsigned long star_count, double
         double t = (PI/2) * static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/3));
         this->stars[i] = Star(r*cos(t), r*sin(t), 1);
     }
-    this->stars[0] = Star(0, 0, 4.4 * pow(10, 6));
+    this->stars[0] = Star(0, 0, 4.4 * pow(10, 6)); // Crée un "trou noir" au centre 
 
     // Init shader
     this->shader = Shader("Shader/star_vert.shader", "Shader/star_frag.shader");
@@ -108,11 +107,14 @@ void Galaxy::Draw(){
     for(int i = this->star_count -1; i >= 0; i--)
     {
         this->shader.use();
+        // Passe les coordonnées de l'étoile au shader
         shader.set_vec2("offset", world_to_screen_coord(this->stars[i].position));
         if(this->stars[i].mass < pow(10, 6)) 
             shader.set_float("col", 0);
         else 
             shader.set_float("col", 1);
+        
+        // Affiche l'etoile
         glBindVertexArray(this->VAO);
         glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
         glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -137,8 +139,6 @@ void Galaxy::calculate_force(int star_id){
             this->Naive(star_id);break;
         case Algorithm::Barnes_Hut: 
             this->Barnes_hut(star_id);break;
-        case Algorithm::GPU: 
-            break;
     };
 }
 
@@ -160,18 +160,20 @@ bool is_in_vector(std::vector<int> v, int val){
 
 void Galaxy::Barnes_hut(int star_id){
     this->BH_queue = std::queue<QuadTree*>();
+    // Ajoute les 4 quadrants de la racine à la file 
     for(int i = 0; i < 4; i++)
         if (this->BH_tree->childs[i] != nullptr)
             BH_queue.push(this->BH_tree->childs[i]);
 
-    for(;!BH_queue.empty();BH_queue.pop())
+    for(;!BH_queue.empty();BH_queue.pop()) // Traverse les quadrants dans la file
     {
         QuadTree* current = BH_queue.front();
+        // Le noeud est une feuille simple
         if(current->star_list.size() == 1){
             Vector2 F = this->stars[current->star_list[0]].force_field(this->stars[star_id].position - this->stars[current->star_list[0]].position);
             this->stars[star_id].apply_force(F, this->time_step);
         }
-        // If the star is in the quadrant's star list, don't approximate
+        // Le noeud est une feuille multiple contenant l'étoile
         else if (is_in_vector(current->star_list, star_id)){
             for(int i = 0; i < current->star_list.size(); i++){
                 if(current->star_list[i] == star_id)
@@ -180,22 +182,22 @@ void Galaxy::Barnes_hut(int star_id){
                 this->stars[star_id].apply_force(F, this->time_step);
             }
         }
-        // If more than one star are in the quadrant, approximate
+        // Le noeud est une feuille multiple
         else if(current->star_list.size() > 1){
             Vector2 F = Star(current->mass_center.x, current->mass_center.y, current->mass).force_field(this->stars[star_id].position - current->mass_center);
             this->stars[star_id].apply_force(F, this->time_step);
         }
-        // If its not a leaf
+        // Le noaud n'est pas une feuille
         else{ 
-            // Apply Barnes-Hut test
+            // Appliquer le test de Barnes-Hut
             double d = dist(this->stars[star_id].position, current->mass_center);
             double s = SCREEN_WORLD_WIDTH*pow(2, -current->depth+1);
             
-            if (s/d < this->BH_theta){ // If sufficiently far away
+            if (s/d < this->BH_theta){ // Si l'etoile est suffisament loin
                 Vector2 F = Star(current->mass_center.x, current->mass_center.y, current->mass).force_field(this->stars[star_id].position - current->mass_center);
                 this->stars[star_id].apply_force(F, this->time_step);
             }
-            else{ // If too close
+            else{ // Si elle est trop proche
                 for(int i = 0; i < 4; i++)
                     if (current->childs[i] != nullptr)
                         BH_queue.push(current->childs[i]);
@@ -212,15 +214,18 @@ bool Galaxy::is_on_screen(int id){
 void Galaxy::insert_star_in_tree(double x, double y, int id, QuadTree *tree){
     if(!this->is_on_screen(id))
         return;
-    if(tree->star_list.size() == 0) { // if not a leaf
+    // Si le noeud est vide, on ajoute l'étoile
+    if(tree->star_list.size() == 0) {
         int quadrant = tree->get_quadrant(Vector2(x, y));
-        if(tree->childs[quadrant] != nullptr) // if quadrant not empty, modify mass stuff and recurse into it
+        // Si le quadrant de l'etoile est occupé, on modifie le noeud et descend dans l'arbre
+        if(tree->childs[quadrant] != nullptr)
         {
             tree->mass_center = (tree->mass * tree->mass_center + this->stars[id].mass*this->stars[id].position)/(tree->mass + this->stars[id].mass);
             tree->mass += this->stars[id].mass;
             insert_star_in_tree(x, y, id, tree->childs[quadrant]);
         }
-        else{ // if quadrant empty, then create leaf
+        // Si le quadrant est vide, on y place l'etoile
+        else{ 
             tree->childs[quadrant] = new QuadTree {
                                                 {nullptr, nullptr, nullptr, nullptr},
                                                 std::vector<int>{id},
@@ -231,12 +236,14 @@ void Galaxy::insert_star_in_tree(double x, double y, int id, QuadTree *tree){
             };
         }
     }
-    else {
-        if(tree->star_list.size() > 1 || SCREEN_WORLD_WIDTH*pow(2, -tree->depth+1) < EPSILON) {// if already multiple stars in the cell or too close to a star
+    else { // Si le noeud est rempli
+        // S'il le noeud est une feuille multiple ou le noeud trop profond, on ajoute l'étoile à la liste du noeud
+        if(tree->star_list.size() > 1 || SCREEN_WORLD_WIDTH*pow(2, -tree->depth+1) < EPSILON) {  
             tree->mass_center = (tree->mass * tree->mass_center + this->stars[id].mass * this->stars[id].position)/(tree->mass + this->stars[id].mass);
             tree->mass += this->stars[id].mass;
             tree->star_list.push_back(id);
         }
+        // Sinon, on transforme le noeud en noeud interne et on ajoute les étoiles à l'arbre
         else{
             int last_id = tree->star_list[0];
             Vector2 last_pos = this->stars[last_id].position;
