@@ -90,20 +90,20 @@ int main(int argc, char** argv)
 
         curent_time = glfwGetTime();
         galaxy.Update();
-        Vector2 speed = galaxy.get_star_speed(0);
         
         // Calcule le temps de calcul, l'enregistre et affiche le FPS dans le titre de la fenêtre
         double dt = curent_time - prev_time;
         prev_time = curent_time;
         record << frame_counter << ", " << dt << "\n";
         glfwSetWindowTitle(window, (std::string("Simulation: ") + std::to_string(1/dt)).c_str());
+
+        // Affiche la nouvelle galaxie
 		glClearColor(0.f, 0.f, 0.f, 0.f);
 		glClear(GL_COLOR_BUFFER_BIT); // Apply the color previously set
-
 		galaxy.Draw();
-
 		glfwSwapBuffers(window); 
 		glfwPollEvents();
+
         frame_counter += 1;
 	}
 
